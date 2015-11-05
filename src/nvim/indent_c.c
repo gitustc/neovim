@@ -766,10 +766,25 @@ static int cin_isfuncdecl(char_u **sp, linenr_T first_lnum, linenr_T min_lnum)
     return FALSE;
 
   while (*s && *s != '(' && *s != ';' && *s != '\'' && *s != '"') {
-    if (cin_iscomment(s))       /* ignore comments */
+    if (cin_iscomment(s)) {
+      /* ignore comments */
       s = cin_skipcomment(s);
-    else
+    }else if (*s == ':') {
+      if (*(s + 1) == ':') {
+        s += 2;
+      } else {
+        /* to avoid following situation
+         * A::A(int a, int b)           
+         *     : a(0)  // not a function declaration here
+         *     , b(0)                   
+         * { //...                      
+         * }                            
+         */
+        return FALSE;
+      }
+    } else {
       ++s;
+    }
   }
   if (*s != '(')
     return FALSE;               /* ';', ' or "  before any () or no '(' */
@@ -1085,6 +1100,21 @@ cin_is_cpp_baseclass (
          * something like "):" */
         class_or_struct = FALSE;
         lookfor_ctor_init = TRUE;
+
+        /* experimental, to handle
+         *   A::A(int a, int b, int c)
+         *      : a(0)
+         *      , b(0)
+         *      , c(0) <---here
+         *      
+         */
+        char_u *cur_line = ml_get(lnum);
+        char_u *cur_s    = cin_skipcomment(line);
+
+        if(cur_s[0] == ','){
+            *col = (colnr_T)(cur_s - cur_line);
+            return TRUE;
+        }
       } else if (s[0] == '?') {
         /* Avoid seeing '() :' after '?' as constructor init. */
         return FALSE;
