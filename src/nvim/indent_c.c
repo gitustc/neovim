@@ -2854,10 +2854,10 @@ int get_c_indent(void)
                     lookfor = LOOKFOR_ENUM_OR_INIT;
                     cont_amount = cin_first_id_amount();
 
-                    /* struct xxx = {
-                     *     a,  <-- line start witout variable type and end with comma
+                    /* struct A a = {
+                     *     a,  // <-- line start witout variable type and end with comma
                      *     b,
-                     * } 
+                     * };
                      */
                     if (cont_amount == 0) {
                       break;
